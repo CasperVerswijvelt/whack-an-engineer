@@ -52,6 +52,8 @@ unsigned long lastButtonPressed = 0;
 
 unsigned long lastHit = 0;
 
+unsigned long lastTimeLeftSent = 0;
+
 int previousLedIdx = -1;
 int currentLedIdx = -1;
 int lastHitLedIdx = -1;
@@ -111,6 +113,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   <div class="content">
     <h2>Game state: <span id="gameState">-</span></h2>
     <h2>Score: <span id="score">-</span></h2>
+    <h2>Time: <span id="time">-</span></h2>
   </div>
 <script>
   const gateway = `ws://${window.location.hostname}/ws`;
@@ -290,6 +293,8 @@ void loop() {
     case GAME_PLAYING:
       {
 
+        wsReportTimeLeft(currentMillis);
+
         bool gameFinished = currentMillis > lastGameStateChange + GAME_LENGTH;
 
         // Key handling
@@ -426,11 +431,25 @@ void wsReportGameState() {
   String gameStateString = "gameState ";
   gameStateString.concat(state);
   ws.textAll(gameStateString);
-  ws.
 }
 
 void wsReportScore() {
   String scoreString = "score ";
   scoreString.concat(score);
   ws.textAll(scoreString);
+}
+
+void wsReportTimeLeft(unsigned long millis) {
+  if (millis > lastTimeLeftSent + 1000) {
+
+    String scoreString = "time ";
+    scoreString.concat(
+      max(
+        0, 
+        (int) round((GAME_LENGTH - (millis - lastGameStateChange)) / 1000.0)
+      )
+    );
+    ws.textAll(scoreString);
+    lastTimeLeftSent = millis;
+  }
 }
