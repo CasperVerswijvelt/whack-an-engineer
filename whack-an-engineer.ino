@@ -191,13 +191,13 @@ void loop() {
         // Update game state
         if (currentLedIdx == -1) {
           // No LED on right now, check if we should turn one
-          if (currentMillis > (lastLedOff + timeLEDOn)) {
+          if (currentMillis > (lastLedOff + timeBetweenLED)) {
             // Make sure that new led idx is never same as previous
             if (!gameFinished) turnOnRandomLED(currentMillis);
           }
         } else {
           // A LED is on right now, check if it should be turned off
-          if (currentMillis > (lastLedOn + timeBetweenLED)) {
+          if (currentMillis > (lastLedOn + timeLEDOn)) {
             turnOffCurrentLED(currentMillis);
           }
         }
