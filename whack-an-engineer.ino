@@ -1,24 +1,27 @@
 #include <Keypad.h>
 #include <Adafruit_NeoPixel.h>
+#include <WiFi.h>
+#include "secrets.h"
 
 #define NEOPIXEL_PIN 12
-#define NUMPIXELS 3
+#define NUMPIXELS 6
 
 #define RAINBOW_CYCLE_MS 5000
 #define GAME_LENGTH 30000
 
 #define INITIAL_TIME_BETWEEN_LED 850
-#define INITIAL_TIME_LED_ON      750
+#define INITIAL_TIME_LED_ON 750
 #define MIN_TIME_BETWEEN_LED 450
-#define MIN_TIME_LED_ON      500
+#define MIN_TIME_LED_ON 500
 #define STEP_TIME_BETWEEN_LED 20
-#define STEP_TIME_LED_ON      10
+#define STEP_TIME_LED_ON 10
 
 #define LED_FADE_MS 100
 #define HIT_FADE_MS 450
 
 
 enum GameState {
+  GAME_WIFI_CONNECTING,
   GAME_IDLE,
   GAME_STARTING,
   GAME_PLAYING,
@@ -54,14 +57,24 @@ int lastHitLedIdx = -1;
 int score = 0;
 bool lastHitWasSucces = false;
 
-GameState state = GAME_IDLE;
+GameState state = GAME_WIFI_CONNECTING;
 
 int timeBetweenLED = INITIAL_TIME_BETWEEN_LED;
 int timeLEDOn = INITIAL_TIME_LED_ON;
 
+int wifiLedIdx = 0;
+int wifiLedReverse = false;
+int WIFI_LED_TRAIL = NUMPIXELS / 3;
+
 void setup() {
   Serial.begin(9600);
   pixels.begin();
+
+  WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
+  WiFi.setHostname(WIFI_HOST);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Serial.println("Connecting to Wi-Fi...");
 }
 
 void loop() {
@@ -80,6 +93,36 @@ void loop() {
   }
 
   switch (state) {
+
+    case GAME_WIFI_CONNECTING:
+      {
+
+        if (WiFi.status() == WL_CONNECTED) {
+          Serial.println("\nConnected to WiFi");
+          Serial.print("Local ESP32 IP: ");
+          Serial.println(WiFi.localIP());
+          Serial.println(WiFi.getHostname());
+          setGameState(GAME_IDLE, currentMillis);
+          break;
+        }
+
+        for (int i = 0; i < NUMPIXELS; i++) {
+          int brightness = 255 - 255.0 * min(1.0, 1.0 * abs(i - wifiLedIdx) / WIFI_LED_TRAIL);
+          pixels.setPixelColor(i, pixels.Color(brightness, 0, 0, 0));
+        }
+        pixels.show();
+        delay(125);
+        if (wifiLedIdx == 0) {
+          wifiLedReverse = false;
+        } else if (wifiLedIdx == NUMPIXELS - 1) {
+          wifiLedReverse = true;
+        }
+        wifiLedIdx = wifiLedIdx + (wifiLedReverse ? -1 : 1);
+
+        // Skip WI-Fi connection state
+        if (keyWasPressed) setGameState(GAME_IDLE, currentMillis);
+        break;
+      }
 
     case GAME_IDLE:
       {
