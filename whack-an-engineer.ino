@@ -9,7 +9,7 @@
 
 #define INITIAL_TIME_BETWEEN_LED 750
 #define INITIAL_TIME_LED_ON 750
-#define LED_FADE_MS 75
+#define LED_FADE_MS 100
 #define HIT_FADE_MS 450
 
 
@@ -68,7 +68,9 @@ void loop() {
   bool keyWasPressed = pressedKey != NO_KEY;
   if (keyWasPressed) {
     Serial.print("Key pressed: ");
-    Serial.println(pressedKey);
+    Serial.print(pressedKey);
+    Serial.print(" in state ");
+    Serial.println(state);
     lastButtonPressed = currentMillis;
   }
 
@@ -158,41 +160,37 @@ void loop() {
 
         bool gameFinished = currentMillis > lastGameStateChange + GAME_LENGTH;
 
-        // It's possible that we are still in playing state  to let animations
-        //  finish, but the game is already over
-        if (!gameFinished) {
-          // Key handling
-          if (keyWasPressed) {
-            int pressedKeyIdx = String(pressedKey).toInt() - 1;
-            lastHitWasSucces = pressedKeyIdx == currentLedIdx;
-            if (lastHitWasSucces) {
-              // It's a hit!
-              // Turn of LED and increment score
-              turnOffCurrentLED(currentMillis);
-              score++;
-              Serial.print("Score: ");
-              Serial.println(score);
-            } else {
-              Serial.println("Incorrect!");
-            }
-
-            // Save last hit info
-            lastHit = currentMillis;
-            lastHitLedIdx = pressedKeyIdx;
+        // Key handling
+        if (keyWasPressed) {
+          int pressedKeyIdx = String(pressedKey).toInt() - 1;
+          lastHitWasSucces = pressedKeyIdx == currentLedIdx;
+          if (lastHitWasSucces) {
+            // It's a hit!
+            // Turn of LED and increment score
+            turnOffCurrentLED(currentMillis);
+            score++;
+            Serial.print("Score: ");
+            Serial.println(score);
+          } else {
+            Serial.println("Incorrect!");
           }
 
-          // Update game state
-          if (currentLedIdx == -1) {
-            // No LED on right now, check if we should turn one
-            if (currentMillis > (lastLedOff + timeLEDOn)) {
-              // Make sure that new led idx is never same as previous
-              turnOnRandomLED(currentMillis);
-            }
-          } else {
-            // A LED is on right now, check if it should be turned off
-            if (currentMillis > (lastLedOn + timeBetweenLED)) {
-              turnOffCurrentLED(currentMillis);
-            }
+          // Save last hit info
+          lastHit = currentMillis;
+          lastHitLedIdx = pressedKeyIdx;
+        }
+
+        // Update game state
+        if (currentLedIdx == -1) {
+          // No LED on right now, check if we should turn one
+          if (currentMillis > (lastLedOff + timeLEDOn)) {
+            // Make sure that new led idx is never same as previous
+            if (!gameFinished) turnOnRandomLED(currentMillis);
+          }
+        } else {
+          // A LED is on right now, check if it should be turned off
+          if (currentMillis > (lastLedOn + timeBetweenLED)) {
+            turnOffCurrentLED(currentMillis);
           }
         }
 
