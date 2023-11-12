@@ -7,8 +7,13 @@
 #define RAINBOW_CYCLE_MS 5000
 #define GAME_LENGTH 30000
 
-#define INITIAL_TIME_BETWEEN_LED 750
-#define INITIAL_TIME_LED_ON 750
+#define INITIAL_TIME_BETWEEN_LED 850
+#define INITIAL_TIME_LED_ON      750
+#define MIN_TIME_BETWEEN_LED 450
+#define MIN_TIME_LED_ON      500
+#define STEP_TIME_BETWEEN_LED 20
+#define STEP_TIME_LED_ON      10
+
 #define LED_FADE_MS 100
 #define HIT_FADE_MS 450
 
@@ -171,6 +176,9 @@ void loop() {
             score++;
             Serial.print("Score: ");
             Serial.println(score);
+            // More faster!
+            timeBetweenLED = max(MIN_TIME_BETWEEN_LED, timeBetweenLED - STEP_TIME_BETWEEN_LED);
+            timeLEDOn = max(MIN_TIME_LED_ON, timeLEDOn - STEP_TIME_LED_ON);
           } else {
             Serial.println("Incorrect!");
           }
@@ -251,15 +259,15 @@ void turnOnRandomLED(unsigned long millis) {
   currentLedIdx = random(0, NUMPIXELS - 1);
   if (currentLedIdx >= previousLedIdx) currentLedIdx++;
   lastLedOn = millis;
-  Serial.print("Turned on LED with index ");
-  Serial.println(currentLedIdx);
+  // Serial.print("Turned on LED with index ");
+  // Serial.println(currentLedIdx);
 }
 
 void turnOffCurrentLED(unsigned long millis) {
   previousLedIdx = currentLedIdx;
   currentLedIdx = -1;
   lastLedOff = millis;
-  Serial.println("Turned off LED");
+  // Serial.println("Turned off LED");
 }
 
 
