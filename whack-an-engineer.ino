@@ -1,6 +1,7 @@
 #include <Keypad.h>
 #include <Adafruit_NeoPixel.h>
 #include <WiFi.h>
+#include <ESPAsyncWebServer.h>
 #include "secrets.h"
 
 #define NEOPIXEL_PIN 12
@@ -66,6 +67,79 @@ int wifiLedIdx = 0;
 int wifiLedReverse = false;
 int WIFI_LED_TRAIL = NUMPIXELS / 3;
 
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
+
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html>
+<head>
+  <title>Whack-an-angineer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <style>
+  html {
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: center;
+  }
+  h1 {
+    font-size: 1.8rem;
+    color: white;
+  }
+  h2{
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #143642;
+  }
+  .topnav {
+    overflow: hidden;
+    background-color: #143642;
+  }
+  body {
+    margin: 0;
+  }
+  .content {
+    padding: 30px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  </style>
+</head>
+<body>
+  <div class="topnav">
+    <h1>Whack-an-engineer</h1>
+  </div>
+  <div class="content">
+    <h2>Game state: <span id="gameState">-</span></h2>
+    <h2>Score: <span id="score">-</span></h2>
+  </div>
+<script>
+  const gateway = `ws://${window.location.hostname}/ws`;
+  window.addEventListener(
+    'load', 
+    () => {
+      console.log('Trying to open a WebSocket connection...');
+      const websocket = new WebSocket(gateway);
+      websocket.onopen = () => console.log("Conneciton opened");
+      websocket.onclose = () => {
+        console.log('Connection closed');
+        setTimeout(initWebSocket, 2000);
+      };
+      websocket.onmessage = (evt) => {
+        console.log("Received message", evt.data);
+        const split = evt.data.split(" ");
+        const id = split[0];
+        const value = split[1];
+
+        document.getElementById(id).textContent = value;
+      };
+    }
+  );
+
+</script>
+</body>
+</html>
+)rawliteral";
+
 void setup() {
   Serial.begin(9600);
   pixels.begin();
@@ -75,9 +149,18 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   Serial.println("Connecting to Wi-Fi...");
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send_P(200, "text/html", index_html);
+  });
+  ws.onEvent(onWSEvent);
+  server.addHandler(&ws);
+  server.begin();
 }
 
 void loop() {
+
+  ws.cleanupClients();
 
   unsigned long currentMillis = millis();
 
@@ -195,6 +278,7 @@ void loop() {
         timeBetweenLED = INITIAL_TIME_BETWEEN_LED;
         timeLEDOn = INITIAL_TIME_LED_ON;
         score = 0;
+        wsReportScore();
         lastHitLedIdx = -1;
         currentLedIdx = -1;
         previousLedIdx = -1;
@@ -217,6 +301,7 @@ void loop() {
             // Turn of LED and increment score
             turnOffCurrentLED(currentMillis);
             score++;
+            wsReportScore();
             Serial.print("Score: ");
             Serial.println(score);
             // More faster!
@@ -296,6 +381,8 @@ void setGameState(GameState newGameState, unsigned long millis) {
 
   Serial.print("Set game state to ");
   Serial.println(state);
+
+  wsReportGameState();
 }
 
 void turnOnRandomLED(unsigned long millis) {
@@ -313,7 +400,37 @@ void turnOffCurrentLED(unsigned long millis) {
   // Serial.println("Turned off LED");
 }
 
-
 int getStartHue(unsigned long currentMillis) {
   return (currentMillis % RAINBOW_CYCLE_MS) / (RAINBOW_CYCLE_MS * 1.0) * 65535;
+}
+
+void onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
+ void *arg, uint8_t *data, size_t len) {
+  switch (type) {
+    case WS_EVT_CONNECT:
+      Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+      wsReportGameState();
+      wsReportScore();
+      break;
+    case WS_EVT_DISCONNECT:
+      Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      break;
+    case WS_EVT_DATA:
+    case WS_EVT_PONG:
+    case WS_EVT_ERROR:
+      break;
+  }
+}
+
+void wsReportGameState() {
+  String gameStateString = "gameState ";
+  gameStateString.concat(state);
+  ws.textAll(gameStateString);
+  ws.
+}
+
+void wsReportScore() {
+  String scoreString = "score ";
+  scoreString.concat(score);
+  ws.textAll(scoreString);
 }
