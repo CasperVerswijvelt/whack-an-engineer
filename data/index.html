@@ -8,15 +8,25 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
-<body>
-    <div class="topnav">
-        <h1>Whack-an-engineer</h1>
+<body id="game" class="game--loading">
+    <div class="screen loading-screen">
+        <div class="title">LOADING</div>
     </div>
-    <div class="content">
-        <h2>Game state: <span id="gameState">-</span></h2>
+    <div class="screen idle-screen">
+        <div class="title">WHACK AN ENGINEER</div>
+        <div class="press-to-start">PRESS ANY KEY TO START</div>
+    </div>
+    <div class="screen starting-screen">
+        <div class="title">GET READY</div>
+    </div>
+    <div class="screen playing-screen">
+        <div id="score"></div>
+        <div id="clock"></div>
+    </div>
+    <!-- <div class="content">
         <h2>Score: <span id="score">-</span></h2>
         <h2>Time: <span id="time">-</span></h2>
-    </div>
+    </div> -->
     <script src="script.js"></script>
 </body>
 
