@@ -52,6 +52,7 @@ unsigned long lastLedOff = 0;
 unsigned long lastButtonPressed = 0;
 unsigned long lastHit = 0;
 unsigned long lastTimeLeftSent = 0;
+unsigned long lastWsMsgSent = 0;
 
 // Game states
 int previousLedIdx = -1;
@@ -61,6 +62,7 @@ int score = 0;
 bool lastHitWasSucces = false;
 
 GameState state = GAME_WIFI_CONNECTING;
+int previousWifiState = -1;
 
 int timeBetweenLED = INITIAL_TIME_BETWEEN_LED;
 int timeLEDOn = INITIAL_TIME_LED_ON;
@@ -118,6 +120,20 @@ void loop() {
     lastButtonPressed = currentMillis;
   }
 
+  // Print changed Wi-Fi state
+  wl_status_t currentWifiStatus = WiFi.status();
+  if (currentWifiStatus != previousWifiState) {
+    Serial.print("Wi-Fi state");
+    Serial.println(currentWifiStatus);
+    previousWifiState = currentWifiStatus;
+  }
+
+  // Send something on websocket to show that it's alive
+  if (currentMillis > lastWsMsgSent + 5000) {
+    wsReport("pong");
+  }
+
+  // Handling for specific game states
   switch (state) {
     case GAME_WIFI_CONNECTING: {
       if (WiFi.status() == WL_CONNECTED) {
@@ -352,13 +368,13 @@ void onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 void wsReportGameState() {
   String gameStateString = "gameState ";
   gameStateString.concat(state);
-  ws.textAll(gameStateString);
+  wsReport(gameStateString);
 }
 
 void wsReportScore() {
   String scoreString = "score ";
   scoreString.concat(score);
-  ws.textAll(scoreString);
+  wsReport(scoreString);
 }
 
 void wsReportTimeLeft(unsigned long millis) {
@@ -367,7 +383,12 @@ void wsReportTimeLeft(unsigned long millis) {
     scoreString.concat(max(
         0,
         (int)round((GAME_LENGTH - (millis - lastGameStateChange)) / 1000.0)));
-    ws.textAll(scoreString);
+    wsReport(scoreString);
     lastTimeLeftSent = millis;
   }
+}
+
+void wsReport(String message) {
+  ws.textAll(message);
+  lastWsMsgSent = millis();
 }

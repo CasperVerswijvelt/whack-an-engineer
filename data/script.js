@@ -6,6 +6,9 @@ const GAME_STARTING = 2;
 const GAME_PLAYING = 3;
 const GAME_END = 4;
 
+let webSocket
+let wsPongTimeout;
+
 const gameStateClassMap = {
     [GAME_IDLE]: "game--idle",
     [GAME_STARTING]: "game--starting",
@@ -22,14 +25,33 @@ const formatSeconds = (seconds) => {
 
 const initWebSocket = () => {
     console.log('Trying to open a WebSocket connection...');
-    const websocket = new WebSocket(wsUri);
-    websocket.onopen = () => console.log("Connection opened");
-    websocket.onclose = () => {
-        console.log('Connection closed');
-        document.getElementById("game").className = "loading"
-        setTimeout(initWebSocket, 2000);
+    webSocket = new WebSocket(wsUri);
+
+    const handleClose = () => {
+        webSocket = null;
+        document.getElementById("game").className = "game--loading"
+        setTimeout(initWebSocket, 1000);
+    }
+    const setPongTimeout = () => {
+        clearTimeout(wsPongTimeout);
+        wsPongTimeout = setTimeout(() => {
+            console.log("Did not receive WS message for 8 seconds, closing connection...")
+            webSocket.close();
+            handleClose();
+        }, 8000)
+    }
+    webSocket.onopen = function () {
+        if (this !== webSocket) return;
+        console.log("Connection opened");
+        setPongTimeout();
     };
-    websocket.onmessage = (evt) => {
+    webSocket.onclose = function onClose() {
+        if (this !== webSocket) return;
+        console.log('Connection closed');
+        handleClose();
+    }
+    webSocket.onmessage = function (evt) {
+        if (this !== webSocket) return;
         const split = evt.data.split(" ");
         const id = split[0];
         const value = split[1];
@@ -43,6 +65,8 @@ const initWebSocket = () => {
             case "time":
                 document.getElementById("clock").innerHTML = formatSeconds(parseInt(value))
         }
+
+        setPongTimeout();
     };
 }
 
