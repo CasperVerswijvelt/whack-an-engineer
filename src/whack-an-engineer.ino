@@ -9,6 +9,8 @@
 #define NEOPIXEL_PIN 12
 #define NUMPIXELS 6
 
+#define WIFI_ANIMATION_CYCLE_MS 1000
+
 #define RAINBOW_CYCLE_MS 5000
 #define GAME_LENGTH 30000
 
@@ -146,19 +148,22 @@ void loop() {
         break;
       }
 
+      int pointInCycle =
+          (currentMillis - lastGameStateChange) % WIFI_ANIMATION_CYCLE_MS;
+      int maxIndex = NUMPIXELS - 1;
+
+      float position =
+          pointInCycle / (float)WIFI_ANIMATION_CYCLE_MS * maxIndex * 2;
+
+      if (position > maxIndex) {
+        position = maxIndex - fmod(position, maxIndex);
+      }
+
       for (int i = 0; i < NUMPIXELS; i++) {
-        int brightness = 255 - 255.0 * min(1.0, 1.0 * abs(i - wifiLedIdx) /
+        int brightness = 255 - 255.0 * min(1.0, 1.0 * abs(i - position) /
                                                     wifiLedTrailLength);
         pixels.setPixelColor(i, pixels.Color(brightness, 0, 0, 0));
       }
-      pixels.show();
-      delay(125);
-      if (wifiLedIdx == 0) {
-        wifiLedReverse = false;
-      } else if (wifiLedIdx == NUMPIXELS - 1) {
-        wifiLedReverse = true;
-      }
-      wifiLedIdx = wifiLedIdx + (wifiLedReverse ? -1 : 1);
 
       // Skip WI-Fi connection state
       if (keyWasPressed) {
