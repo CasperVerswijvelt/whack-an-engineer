@@ -2,3 +2,5 @@ BasedOnStyle: Google
 IndentWidth: 2
 ColumnLimit: 80
 BraceBreakingStyle: BS_Attach
+AlignAfterOpenBracket: BlockIndent
+AlignAfterCloseBracket: AlwaysBreak

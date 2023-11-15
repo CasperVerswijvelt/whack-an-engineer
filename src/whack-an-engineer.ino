@@ -174,61 +174,50 @@ void loop() {
       }
       pixels.rainbow(
           getStartHue(currentMillis), 1, 255,
-          min((currentMillis - lastGameStateChange) / 1250.0 * 255, 255.0),
-          true);
+          min((currentMillis - lastGameStateChange) / 1250.0 * 255, 255.0), true
+      );
       break;
     }
 
     case GAME_STARTING: {
       // Blocking fade out and game start effect
 
-      // Fade out
-      {
-        int hue = getStartHue(currentMillis);
-        int steps = 200;
-        int stepMs = 1;
-        for (int i = 0; i < steps; i++) {
-          pixels.rainbow(getStartHue(currentMillis), 1, 255,
-                         255 - ((i * 1.0) / steps * 255), true);
-          pixels.show();
-          delay(stepMs);
-        }
-      }
+      int fadeOutDuration = 200;
+      int flashCount = 3;
+      int flashDuration = (flashCount + 1) * 1000;
 
-      // 3x red flash
-      {
-        delay(1000);
-        for (int i = 0; i < 3; i++) {
-          int steps = 40;
-          int stepMs = 5;
-          for (int j = 0; j < steps; j++) {
-            pixels.fill(pixels.Color(255.0 / steps * j, 0, 0, 0), 0, NUMPIXELS);
-            pixels.show();
-            delay(stepMs);
-          }
-          for (int j = 0; j < steps; j++) {
-            pixels.fill(pixels.Color(255 - 255.0 / steps * j, 0, 0, 0), 0,
-                        NUMPIXELS);
-            pixels.show();
-            delay(stepMs);
-          }
-          pixels.clear();
-          pixels.show();
-          delay(800);
+      if (currentMillis < lastGameStateChange + fadeOutDuration) {
+        pixels.rainbow(
+            getStartHue(currentMillis), 1, 255,
+            255 - (float)(currentMillis - lastGameStateChange) /
+                      fadeOutDuration * 200,
+            true
+        );
+      } else if (currentMillis < lastGameStateChange + fadeOutDuration + flashDuration) {
+        int minDiff = 1000;
+        for (int i = 1; i <= flashCount; i++) {
+          minDiff =
+              min(minDiff,
+                  abs((int)(currentMillis - (lastGameStateChange +
+                                             fadeOutDuration + 1000 * i))));
         }
-        delay(1000);
+        pixels.fill(
+            pixels.Color(max(0.0, 255 - minDiff / 200.0 * 255), 0, 0, 0), 0,
+            NUMPIXELS
+        );
+      } else if (currentMillis < lastGameStateChange + fadeOutDuration + flashDuration + 1000) {
+        pixels.clear();
+      } else {
+        // Reset game states
+        timeBetweenLED = INITIAL_TIME_BETWEEN_LED;
+        timeLEDOn = INITIAL_TIME_LED_ON;
+        score = 0;
+        wsReportScore();
+        lastHitLedIdx = -1;
+        currentLedIdx = -1;
+        previousLedIdx = -1;
+        setGameState(GAME_PLAYING, currentMillis);
       }
-
-      // Reset game states
-      timeBetweenLED = INITIAL_TIME_BETWEEN_LED;
-      timeLEDOn = INITIAL_TIME_LED_ON;
-      score = 0;
-      wsReportScore();
-      lastHitLedIdx = -1;
-      currentLedIdx = -1;
-      previousLedIdx = -1;
-      // Re-read millis since we did blocking stuff
-      setGameState(GAME_PLAYING, millis());
       break;
     }
 
@@ -298,9 +287,10 @@ void loop() {
       if (doHitEffect) {
         float brightness =
             255 - 255.0 * (currentMillis - lastHit) / HIT_FADE_MS;
-        pixels.setPixelColor(lastHitLedIdx,
-                             lastHitWasSucces ? pixels.Color(0, brightness, 0)
-                                              : pixels.Color(brightness, 0, 0));
+        pixels.setPixelColor(
+            lastHitLedIdx, lastHitWasSucces ? pixels.Color(0, brightness, 0)
+                                            : pixels.Color(brightness, 0, 0)
+        );
       }
 
       // Game end
@@ -346,12 +336,16 @@ int getStartHue(unsigned long currentMillis) {
   return (currentMillis % RAINBOW_CYCLE_MS) / (RAINBOW_CYCLE_MS * 1.0) * 65535;
 }
 
-void onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
-               AwsEventType type, void *arg, uint8_t *data, size_t len) {
+void onWSEvent(
+    AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
+    void *arg, uint8_t *data, size_t len
+) {
   switch (type) {
     case WS_EVT_CONNECT:
-      Serial.printf("WebSocket client #%u connected from %s\n", client->id(),
-                    client->remoteIP().toString().c_str());
+      Serial.printf(
+          "WebSocket client #%u connected from %s\n", client->id(),
+          client->remoteIP().toString().c_str()
+      );
       wsReportGameState();
       wsReportScore();
       break;
@@ -381,8 +375,8 @@ void wsReportTimeLeft(unsigned long millis) {
   if (millis > lastTimeLeftSent + 1000) {
     String scoreString = "time ";
     scoreString.concat(max(
-        0,
-        (int)round((GAME_LENGTH - (millis - lastGameStateChange)) / 1000.0)));
+        0, (int)round((GAME_LENGTH - (millis - lastGameStateChange)) / 1000.0)
+    ));
     wsReport(scoreString);
     lastTimeLeftSent = millis;
   }
