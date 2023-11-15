@@ -224,7 +224,8 @@ void loop() {
     case GAME_PLAYING: {
       wsReportTimeLeft(currentMillis);
 
-      bool gameFinished = currentMillis > lastGameStateChange + GAME_LENGTH;
+      unsigned long gameEnd = lastGameStateChange + GAME_LENGTH;
+      bool gameFinished = currentMillis > gameEnd;
 
       // Key handling
       if (keyWasPressed) {
@@ -281,8 +282,8 @@ void loop() {
         pixels.setPixelColor(currentLedIdx, pixels.Color(0, 0, 0, brightness));
       }
 
-      bool doHitEffect =
-          lastHitLedIdx != -1 && currentMillis < lastHit + HIT_FADE_MS;
+      unsigned long hitEffectEnd = lastHit + HIT_FADE_MS;
+      bool doHitEffect = lastHitLedIdx != -1 && currentMillis < hitEffectEnd;
       // Hit effect
       if (doHitEffect) {
         float brightness =
@@ -293,16 +294,19 @@ void loop() {
         );
       }
 
+      int silentMs = 1000;
       // Game end
       if (
           // Game time finished
           gameFinished &&
           // No LED's on and all animations finished
-          currentLedIdx == -1 && !doHitEffect) {
-        delay(1000);
+          currentLedIdx == -1 &&
+          !doHitEffect &&
+          currentMillis > hitEffectEnd + silentMs &&
+          currentMillis > gameEnd + silentMs
+        ) {
         // TODO: Go to GAME_END state instead
-        // Re read millis since we did blocking delay
-        setGameState(GAME_IDLE, millis());
+        setGameState(GAME_IDLE, currentMillis);
       }
       break;
     }
