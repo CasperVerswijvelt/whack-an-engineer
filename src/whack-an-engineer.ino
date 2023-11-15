@@ -76,7 +76,7 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pixels.begin();
 
   // Mount filesystem (for web files)
