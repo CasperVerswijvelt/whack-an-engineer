@@ -69,10 +69,6 @@ int previousWifiState = -1;
 int timeBetweenLED = INITIAL_TIME_BETWEEN_LED;
 int timeLEDOn = INITIAL_TIME_LED_ON;
 
-int wifiLedIdx = 0;
-int wifiLedReverse = false;
-int wifiLedTrailLength = NUMPIXELS / 3;
-
 // Webserver
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -102,6 +98,7 @@ void setup() {
   ws.onEvent(onWSEvent);
   server.addHandler(&ws);
   server.begin();
+  lastGameStateChange = millis();
 }
 
 void loop() {
@@ -159,9 +156,14 @@ void loop() {
         position = maxIndex - fmod(position, maxIndex);
       }
 
+      float fadeInPercentage =
+          min(1.f, (currentMillis - lastGameStateChange) / 500.f);
+
       for (int i = 0; i < NUMPIXELS; i++) {
-        int brightness = 255 - 255.0 * min(1.0, 1.0 * abs(i - position) /
-                                                    wifiLedTrailLength);
+        float distance = abs(i - position);
+        float distancePercentage = 1 - distance / maxIndex;
+        int brightness =
+            255.f * pow(distancePercentage, 5) * pow(fadeInPercentage, 3);
         pixels.setPixelColor(i, pixels.Color(brightness, 0, 0, 0));
       }
 
