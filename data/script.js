@@ -38,7 +38,7 @@ const initWebSocket = () => {
             console.log("Did not receive WS message for 8 seconds, closing connection...")
             webSocket.close();
             handleClose();
-        }, 8000)
+        }, 4000)
     }
     webSocket.onopen = function () {
         if (this !== webSocket) return;

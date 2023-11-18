@@ -128,7 +128,7 @@ void loop() {
   }
 
   // Send something on websocket to show that it's alive
-  if (currentMillis > lastWsMsgSent + 5000) {
+  if (currentMillis > lastWsMsgSent + 2000) {
     wsReport("pong");
   }
 
@@ -386,7 +386,6 @@ void wsReportTimeLeft(unsigned long millis) {
   int msSinceGameStateChange = millis - lastGameStateChange;
   int msUntilGameEnd = GAME_LENGTH - msSinceGameStateChange;
   if (millis > lastTimeLeftSent + 1000) {
-    Serial.println(msUntilGameEnd);
     int secondsLeft = max(0, (int)ceil(msUntilGameEnd / 1000.0));
     String scoreString = "time ";
     scoreString.concat(secondsLeft);
