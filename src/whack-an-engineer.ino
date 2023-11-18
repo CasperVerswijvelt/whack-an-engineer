@@ -383,13 +383,16 @@ void wsReportScore() {
 }
 
 void wsReportTimeLeft(unsigned long millis) {
+  int msSinceGameStateChange = millis - lastGameStateChange;
+  int msUntilGameEnd = GAME_LENGTH - msSinceGameStateChange;
   if (millis > lastTimeLeftSent + 1000) {
+    Serial.println(msUntilGameEnd);
+    int secondsLeft = max(0, (int)ceil(msUntilGameEnd / 1000.0));
     String scoreString = "time ";
-    scoreString.concat(max(
-        0, (int)round((GAME_LENGTH - (millis - lastGameStateChange)) / 1000.0)
-    ));
+    scoreString.concat(secondsLeft);
     wsReport(scoreString);
-    lastTimeLeftSent = millis;
+    lastTimeLeftSent = lastGameStateChange + msSinceGameStateChange -
+                       msSinceGameStateChange % 1000;
   }
 }
 
