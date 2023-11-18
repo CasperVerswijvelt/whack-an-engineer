@@ -8,25 +8,47 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
-<body id="game" class="game--loading">
-    <div class="screen loading-screen">
-        <div class="title">LOADING</div>
+<body>
+    <div id="game" class="game--loading">
+        <div class="scoreboard">
+            <div class="title">SCOREBOARD</div>
+            <div class="scores">
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>RANK</th>
+                            <th>NAME</th>
+                            <th>SCORE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoreboard-table-body">
+                        <tr>
+                            <th>1ST</th>
+                            <th>CAS</th>
+                            <th>69</th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="main">
+            <div class="screen loading-screen">
+                <div class="title">LOADING</div>
+            </div>
+            <div class="screen idle-screen">
+                <div class="title">WHACK AN ENGINEER</div>
+                <div class="press-to-start">PRESS ANY KEY TO START</div>
+            </div>
+            <div class="screen starting-screen">
+                <div class="title">GET READY</div>
+            </div>
+            <div class="screen playing-screen">
+                <div id="score"></div>
+                <div id="clock"></div>
+            </div>
+        </div>
     </div>
-    <div class="screen idle-screen">
-        <div class="title">WHACK AN ENGINEER</div>
-        <div class="press-to-start">PRESS ANY KEY TO START</div>
-    </div>
-    <div class="screen starting-screen">
-        <div class="title">GET READY</div>
-    </div>
-    <div class="screen playing-screen">
-        <div id="score"></div>
-        <div id="clock"></div>
-    </div>
-    <!-- <div class="content">
-        <h2>Score: <span id="score">-</span></h2>
-        <h2>Time: <span id="time">-</span></h2>
-    </div> -->
     <script src="script.js"></script>
 </body>
 
