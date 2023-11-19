@@ -57,7 +57,6 @@ html {
 .idle-screen .press-to-start {
     font-size: 1.5em;
     padding-top: .5em;
-    animation: blink 1s forwards infinite;
     color: rgba(255, 255, 255, 0.644);
 }
 
@@ -104,6 +103,10 @@ html {
     display: flex;
 }
 
+#game.game--end .end-screen {
+    display: flex;
+}
+
 .main {
     flex: 1;
 }
@@ -134,8 +137,44 @@ html {
     height: 65px;
 }
 
-
 #game.game--starting .scoreboard,
 #game.game--playing .scoreboard {
     display: none;
+}
+
+#end-text {
+    font-size: 4em;
+}
+
+.end-score {
+    font-size: 6em;
+}
+
+#end-place {
+    font-size: 8em;
+}
+
+#name-input {
+    all: unset;
+    font-size: 12em;
+    letter-spacing: .2em;
+    overflow: hidden;
+    padding-left: .3em;
+    caret-color: transparent;
+    width: 2.1em;
+    background: repeating-linear-gradient(90deg, white .1ch, white 1.08ch, transparent 0, transparent 1.52ch) 0 100%/4ch 0.05em no-repeat;
+    background-position: center 94%;
+}
+
+.enter-initials {
+    font-size: 1.5em;
+    padding-top: 2em;
+}
+
+.highlight {
+    color: #fff400;
+}
+
+.blink {
+    animation: blink 1s forwards infinite;
 }

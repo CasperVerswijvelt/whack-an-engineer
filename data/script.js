@@ -1,42 +1,131 @@
-// const wsUri = `ws://${window.location.hostname}/ws`;
-const wsUri = `ws://192.168.69.152/ws`;
+const wsUri = `ws://${window.location.hostname}/ws`;
+// const wsUri = `ws://192.168.69.152/ws`;
 
+const GAME_LOADING = 0;
 const GAME_IDLE = 1;
 const GAME_STARTING = 2;
 const GAME_PLAYING = 3;
-const GAME_END = 4;
+
+const GAME_END = -1;
 
 const K_SCORES = "scores"
 
 let webSocket
 let wsPongTimeout;
+let endGameTimeout;
 let currentGameState = 0;
 let lastScore = 0;
 
 const gameStateClassMap = {
+    [GAME_LOADING]: "game--loading",
     [GAME_IDLE]: "game--idle",
     [GAME_STARTING]: "game--starting",
     [GAME_PLAYING]: "game--playing",
-    [GAME_END]: "game--end",
+    [GAME_END]: "game--end"
 }
 
-const getScores = () => {
+// ChatGPT generated
+const mockingMessages = [
+    "Pathetic.",
+    "Try harder, maybe?",
+    "Is this a joke?",
+    "Nice attempt, not.",
+    "Hug needed. And practice.",
+    "Even playing?",
+    "Weak sauce.",
+    "Game or nap?",
+    "Strategy or surrender?",
+    "Embarrassing.",
+    "Toddler level.",
+    "Even trying?",
+    "Forgot to score?",
+    "A-game? Oh, my.",
+    "Game or glitch?",
+    "Losing art.",
+    "Toddlers score higher.",
+    "Aim: last place?",
+    "Score says 'ouch.'",
+    "Playing or daydreaming?",
+    "Score needs therapy.",
+    "Warm-up, I hope.",
+    "Strategy or surrender?",
+    "Attempt, or not.",
+    "Enjoy losing?",
+    "Aim: last place?",
+    "Score says 'meh.'",
+    "Game or nap?",
+    "Practice at all?",
+    "Score wants a refund.",
+    "Nap simulator?",
+    "Plants grow faster.",
+    "On life support.",
+    "Even awake?",
+    "On a diet - too low.",
+    "Not even trying, right?",
+    "Apology needed.",
+    "Joke or tragedy?",
+    "Scoreless wonder.",
+    "Caffeine needed.",
+    "Pity party?",
+    "Exciting paint drying.",
+    "Letdown.",
+    "Score or sigh?",
+    "Reality check.",
+    "Practice at all?",
+    "Disaster.",
+    "Game, not a nap!",
+    "Lost. Help it.",
+    "Confused up and down?",
+    "Scoreless wonder.",
+    "Caffeine needed.",
+    "Pity party?",
+    "Paint drying.",
+    "Letdown.",
+    "Score or sigh?",
+    "Reality check.",
+    "Cute attempt.",
+    "Forgot how to win?",
+    "Disappointment.",
+    "Not a lullaby.",
+    "Losing streak.",
+    "Game or catnap?",
+    "Scoreless wonder.",
+    "Cry for help.",
+    "Aim: bottom?",
+    "Pity party?",
+    "Timeout needed.",
+    "Wake up!",
+    "Vacation.",
+    "Sad story?",
+    "Losing legend.",
+    "Tragedy.",
+    "Forgot how to play?",
+    "Facepalm.",
+    "Game or nap?",
+    "Letdown.",
+    "Even trying?",
+    "Redo needed."
+];
+
+const getScores = (extraScore) => {
     const rawScores = localStorage.getItem(K_SCORES);
+    let arr = []
     try {
         const parsed = JSON.parse(rawScores);
-        if (Array.isArray(parsed)) {
-            return parsed.sort((a, b) => {
-                return (
-                    a.score > b.score ||
-                    (
-                        a.score === b.score &&
-                        a.timestamp < b.timestamp
-                    )
-                ) ? -1 : 1;
-            })
-        };
-    } catch (e) { }
-    return [];
+        if (Array.isArray(parsed)) arr = parsed;
+    } catch (e) {
+        // Empty
+    }
+    if (extraScore) arr.push(extraScore)
+    return arr.sort((a, b) => {
+        return (
+            a.score > b.score ||
+            (
+                a.score === b.score &&
+                a.timestamp < b.timestamp
+            )
+        ) ? -1 : 1;
+    });
 }
 
 
@@ -66,9 +155,8 @@ const nth = (d) => {
     }
 };
 
-const updateScoreBoard = () => {
+const updateScoreBoard = (scores) => {
     const tableBody = document.getElementById("scoreboard-table-body");
-    const scores = getScores();
 
     tableBody.innerHTML = "";
 
@@ -90,8 +178,27 @@ const updateScoreBoard = () => {
         trNode.appendChild(rankNode);
         trNode.appendChild(nameNode);
         trNode.appendChild(scoreNode);
+        if (score.temp) trNode.className = "highlight";
         tableBody.appendChild(trNode);
     }
+}
+
+const clearEndGameTimeout = () => {
+    clearTimeout(endGameTimeout);
+}
+
+const setGameEndTimeout = () => {
+    clearEndGameTimeout();
+    endGameTimeout = setTimeout(
+        () => {
+            if (currentGameState === GAME_END) {
+                currentGameState = GAME_IDLE;
+                updateScoreBoard(getScores());
+                syncGameState();
+            }
+        },
+        30000
+    )
 }
 
 const formatSeconds = (seconds) => {
@@ -101,19 +208,24 @@ const formatSeconds = (seconds) => {
     return date.toISOString().substring(14, 19);
 }
 
+const syncGameState = () => {
+    document.getElementById("game").className = gameStateClassMap[currentGameState];
+}
+
 const initWebSocket = () => {
     console.log('Trying to open a WebSocket connection...');
     webSocket = new WebSocket(wsUri);
 
     const handleClose = () => {
         webSocket = null;
-        document.getElementById("game").className = "game--loading"
+        currentGameState = GAME_LOADING
+        syncGameState();
         setTimeout(initWebSocket, 1000);
     }
     const setPongTimeout = () => {
         clearTimeout(wsPongTimeout);
         wsPongTimeout = setTimeout(() => {
-            console.log("Did not receive WS message for 8 seconds, closing connection...")
+            console.log("Did not receive WS message for 4 seconds, closing connection...")
             webSocket.close();
             handleClose();
         }, 4000)
@@ -138,19 +250,59 @@ const initWebSocket = () => {
 
         switch (id) {
             case "gameState":
-                document.getElementById("game").className = gameStateClassMap[value]
-
-
                 const newGameState = intValue;
                 if (newGameState !== currentGameState) {
-                    if (currentGameState == GAME_PLAYING) {
-                        console.log("game has ended");
-                        addScore(prompt("Name?"), lastScore);
-                        updateScoreBoard();
-                    }
-                }
 
-                currentGameState = newGameState;
+                    let finalGameState = newGameState;
+
+                    clearEndGameTimeout();
+
+                    switch (currentGameState) {
+                        case GAME_END:
+                            // If new game state is idle, don't change
+                            //  visualisation yet
+                            if (newGameState === GAME_IDLE) {
+                                finalGameState = GAME_END;
+                            }
+                            break;
+                        case GAME_PLAYING:
+                            // Game state changed from playing to another,
+                            //  assume game has ended
+                            finalGameState = GAME_END;
+                            setGameEndTimeout();
+
+                            const scores = getScores({
+                                score: lastScore,
+                                name: '---',
+                                timestamp: Date.now(),
+                                temp: true
+                            });
+                            const idx = scores.findIndex(el => el.temp);
+
+                            const newHighScore = idx === 0;
+                            const message = newHighScore
+                                ? "NEW HIGH SCORE!"
+                                : mockingMessages[
+                                mockingMessages.length * Math.random() | 0
+                                ]
+                            document.getElementById("end-text").innerText = message;
+                            document.getElementById("end-score").innerText = lastScore;
+                            const endPlace = document.getElementById("end-place");
+                            endPlace.innerText = `${idx + 1}${nth(idx + 1)}`;
+                            const input = document.getElementById("name-input");
+                            input.value = ''
+                            setTimeout(() => {
+                                // Select and focus input element when UI is updated
+                                input.select();
+                                input.focus();
+                            }, 200)
+                            updateScoreBoard(scores);
+                            document.getElementById("end-title");
+                    }
+
+                    currentGameState = finalGameState;
+                    syncGameState();
+                }
 
                 break;
             case "score":
@@ -164,5 +316,23 @@ const initWebSocket = () => {
     };
 }
 
-window.addEventListener('load', initWebSocket);
-updateScoreBoard();
+const setInputFieldListeners = () => {
+    const input = document.getElementById("name-input");
+    input.addEventListener("input", (event) => {
+        setGameEndTimeout();
+        event.target.value = event.target.value.replace(/\W/g, '');
+    });
+    input.addEventListener("change", (event) => {
+        // Enter pressed
+        if (event.target.value) {
+            addScore(event.target.value, lastScore);
+            currentGameState = GAME_IDLE;
+            updateScoreBoard(getScores());
+            syncGameState();
+        }
+    });
+}
+
+initWebSocket();
+setInputFieldListeners();
+updateScoreBoard(getScores());

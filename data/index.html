@@ -13,7 +13,6 @@
         <div class="scoreboard">
             <div class="title">SCOREBOARD</div>
             <div class="scores">
-
                 <table>
                     <thead>
                         <tr>
@@ -22,13 +21,7 @@
                             <th>SCORE</th>
                         </tr>
                     </thead>
-                    <tbody id="scoreboard-table-body">
-                        <tr>
-                            <th>1ST</th>
-                            <th>CAS</th>
-                            <th>69</th>
-                        </tr>
-                    </tbody>
+                    <tbody id="scoreboard-table-body"></tbody>
                 </table>
             </div>
         </div>
@@ -38,7 +31,7 @@
             </div>
             <div class="screen idle-screen">
                 <div class="title">WHACK AN ENGINEER</div>
-                <div class="press-to-start">PRESS ANY KEY TO START</div>
+                <div class="press-to-start blink">PRESS ANY KEY TO START</div>
             </div>
             <div class="screen starting-screen">
                 <div class="title">GET READY</div>
@@ -46,6 +39,13 @@
             <div class="screen playing-screen">
                 <div id="score"></div>
                 <div id="clock"></div>
+            </div>
+            <div class="screen end-screen">
+                <div id="end-text">NEW HIGH SCORE</div>
+                <div class="end-score"><span id="end-score">69</span></div>
+                <div id="end-place" class="highlight">1ST</div>
+                <input id="name-input" type="text" maxlength="3" pattern="[a-zA-Z0-9]+" autocomplete="off">
+                <div class="enter-initials blink">Enter your initials</div>
             </div>
         </div>
     </div>

@@ -39,13 +39,7 @@ Keypad myKeypad =
 
 // States
 
-enum GameState {
-  GAME_WIFI_CONNECTING,
-  GAME_IDLE,
-  GAME_STARTING,
-  GAME_PLAYING,
-  GAME_END
-};
+enum GameState { GAME_WIFI_CONNECTING, GAME_IDLE, GAME_STARTING, GAME_PLAYING };
 
 // Millis
 unsigned long lastGameStateChange = 0;
@@ -311,8 +305,7 @@ void loop() {
           !doHitEffect &&
           currentMillis > hitEffectEnd + silentMs &&
           currentMillis > gameEnd + silentMs
-        ) {
-        // TODO: Go to GAME_END state instead
+      ) {
         setGameState(GAME_IDLE, currentMillis);
       }
       break;
