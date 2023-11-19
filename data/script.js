@@ -32,7 +32,7 @@ const getScores = () => {
                         a.score === b.score &&
                         a.timestamp < b.timestamp
                     )
-                );
+                ) ? -1 : 1;
             })
         };
     } catch (e) { }
