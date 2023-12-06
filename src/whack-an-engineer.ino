@@ -6,8 +6,8 @@
 
 #include "secrets.h"
 
-#define NEOPIXEL_PIN 12
-#define NUMPIXELS 6
+#define NEOPIXEL_PIN 13
+#define NUMPIXELS 17
 
 #define WIFI_ANIMATION_CYCLE_MS 1000
 
