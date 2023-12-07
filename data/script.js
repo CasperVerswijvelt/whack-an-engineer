@@ -16,6 +16,8 @@ let endGameTimeout;
 let currentGameState = 0;
 let lastScore = 0;
 
+let serialBuffer = ""
+
 const gameStateClassMap = {
     [GAME_LOADING]: "game--loading",
     [GAME_IDLE]: "game--idle",
@@ -212,6 +214,79 @@ const syncGameState = () => {
     document.getElementById("game").className = gameStateClassMap[currentGameState];
 }
 
+const handleMessage = (message) => {
+    console.log(message)
+    const split = message.split(" ");
+    const id = split[0];
+    const value = split[1];
+
+    const intValue = parseInt(value);
+
+    switch (id) {
+        case "gameState":
+            const newGameState = intValue;
+            if (newGameState !== currentGameState) {
+
+                let finalGameState = newGameState;
+
+                clearEndGameTimeout();
+
+                switch (currentGameState) {
+                    case GAME_END:
+                        // If new game state is idle, don't change
+                        //  visualisation yet
+                        if (newGameState === GAME_IDLE) {
+                            finalGameState = GAME_END;
+                        }
+                        break;
+                    case GAME_PLAYING:
+                        // Game state changed from playing to another,
+                        //  assume game has ended
+                        finalGameState = GAME_END;
+                        setGameEndTimeout();
+
+                        const scores = getScores({
+                            score: lastScore,
+                            name: '---',
+                            timestamp: Date.now(),
+                            temp: true
+                        });
+                        const idx = scores.findIndex(el => el.temp);
+
+                        const newHighScore = idx === 0;
+                        const message = newHighScore
+                            ? "NEW HIGH SCORE!"
+                            : mockingMessages[
+                            mockingMessages.length * Math.random() | 0
+                            ]
+                        document.getElementById("end-text").innerText = message;
+                        document.getElementById("end-score").innerText = lastScore;
+                        const endPlace = document.getElementById("end-place");
+                        endPlace.innerText = `${idx + 1}${nth(idx + 1)}`;
+                        const input = document.getElementById("name-input");
+                        input.value = ''
+                        setTimeout(() => {
+                            // Select and focus input element when UI is updated
+                            input.select();
+                            input.focus();
+                        }, 200)
+                        updateScoreBoard(scores);
+                        document.getElementById("end-title");
+                }
+
+                currentGameState = finalGameState;
+                syncGameState();
+            }
+
+            break;
+        case "score":
+            document.getElementById("score").innerHTML = value
+            lastScore = intValue;
+        case "time":
+            document.getElementById("clock").innerHTML = formatSeconds(parseInt(value))
+    }
+}
+
 const initWebSocket = () => {
     console.log('Trying to open a WebSocket connection...');
     webSocket = new WebSocket(wsUri);
@@ -242,75 +317,7 @@ const initWebSocket = () => {
     }
     webSocket.onmessage = function (evt) {
         if (this !== webSocket) return;
-        const split = evt.data.split(" ");
-        const id = split[0];
-        const value = split[1];
-
-        const intValue = parseInt(value);
-
-        switch (id) {
-            case "gameState":
-                const newGameState = intValue;
-                if (newGameState !== currentGameState) {
-
-                    let finalGameState = newGameState;
-
-                    clearEndGameTimeout();
-
-                    switch (currentGameState) {
-                        case GAME_END:
-                            // If new game state is idle, don't change
-                            //  visualisation yet
-                            if (newGameState === GAME_IDLE) {
-                                finalGameState = GAME_END;
-                            }
-                            break;
-                        case GAME_PLAYING:
-                            // Game state changed from playing to another,
-                            //  assume game has ended
-                            finalGameState = GAME_END;
-                            setGameEndTimeout();
-
-                            const scores = getScores({
-                                score: lastScore,
-                                name: '---',
-                                timestamp: Date.now(),
-                                temp: true
-                            });
-                            const idx = scores.findIndex(el => el.temp);
-
-                            const newHighScore = idx === 0;
-                            const message = newHighScore
-                                ? "NEW HIGH SCORE!"
-                                : mockingMessages[
-                                mockingMessages.length * Math.random() | 0
-                                ]
-                            document.getElementById("end-text").innerText = message;
-                            document.getElementById("end-score").innerText = lastScore;
-                            const endPlace = document.getElementById("end-place");
-                            endPlace.innerText = `${idx + 1}${nth(idx + 1)}`;
-                            const input = document.getElementById("name-input");
-                            input.value = ''
-                            setTimeout(() => {
-                                // Select and focus input element when UI is updated
-                                input.select();
-                                input.focus();
-                            }, 200)
-                            updateScoreBoard(scores);
-                            document.getElementById("end-title");
-                    }
-
-                    currentGameState = finalGameState;
-                    syncGameState();
-                }
-
-                break;
-            case "score":
-                document.getElementById("score").innerHTML = value
-                lastScore = intValue;
-            case "time":
-                document.getElementById("clock").innerHTML = formatSeconds(parseInt(value))
-        }
+        handleMessage(evt.data);
 
         setPongTimeout();
     };
@@ -333,6 +340,80 @@ const setInputFieldListeners = () => {
     });
 }
 
-initWebSocket();
+const openSerialPort = async () => {
+
+    const port = (await navigator.serial.getPorts())[0]
+
+    if (!port) return;
+
+    await port.open({ baudRate: 115200 });
+
+    // Port opened
+    // currentGameState = GAME_IDLE;
+    // syncGameState();
+    const textEncoder = new TextEncoderStream();
+    const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+    const writer = textEncoder.writable.getWriter();
+    await writer.write("init");
+    writer.releaseLock();
+
+    while (port.readable) {
+        try {
+            const decoder = new TextDecoderStream();
+            port.readable.pipeTo(decoder.writable);
+            const inputStream = decoder.readable;
+            const reader = inputStream.getReader();
+
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (value) {
+                    serialBuffer += value;
+
+                    const split = serialBuffer.split("\n");
+                    if (split.length > 1) {
+                        const split = serialBuffer.split("\n");
+                        serialBuffer = split[split.length - 1];
+                        split.slice(0, split.length - 1).forEach(handleMessage);
+                    }
+                }
+                if (done) {
+                    reader.releaseLock();
+                    break;
+                }
+            }
+
+        } catch (error) {
+            console.warn(error);
+        }
+    }
+}
+
+const setupSerialUsb = () => {
+
+    document.getElementById("usb-btn")
+        .addEventListener("click",
+            async () => {
+                await navigator.serial.requestPort();
+                await openSerialPort();
+            }
+        )
+
+    navigator.serial.addEventListener("connect", (event) => {
+        // TODO: Automatically open event.target or warn user a port is available.
+        console.log(event)
+        openSerialPort();
+    });
+
+    navigator.serial.addEventListener("disconnect", (event) => {
+        // TODO: Remove |event.target| from the UI.
+        // If the serial port was opened, a stream error would be observed as well.
+    });
+
+}
+
+// initWebSocket();
 setInputFieldListeners();
 updateScoreBoard(getScores());
+setupSerialUsb();
+openSerialPort();

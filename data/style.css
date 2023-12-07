@@ -70,6 +70,19 @@ html {
     width: 0px;
 }
 
+.loading-screen .title {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.loading-screen #usb-btn {
+    color: #d8cd00;
+    cursor: pointer;
+    padding: 16px;
+    font-size: 1.2em;
+}
+
 .playing-screen #score {
     font-size: 12em;
 }
