@@ -29,11 +29,16 @@ Adafruit_NeoPixel pixels =
     Adafruit_NeoPixel(NUMPIXELS, NEOPIXEL_PIN, NEO_GRBW + NEO_KHZ800);
 
 // Key configuration
-const byte numRows = 2;  // number of rows on the keypad
-const byte numCols = 3;  // number of columns on the keypad
-char keymap[numRows][numCols] = {{'6', '5', '4'}, {'3', '2', '1'}};
-byte rowPins[numRows] = {14, 27};
-byte colPins[numCols] = {26, 25, 33};
+const byte numRows = 4;  // number of rows on the keypad
+const byte numCols = 4;  // number of columns on the keypad
+char keymap[numRows][numCols] = {
+  {'D', 'E', 'C', 'F'},
+  {'6', '5', '7', '4'},
+  {'2', '1', '3', '0'},
+  {'9', 'A', '8', 'B'}
+  };
+byte rowPins[numRows] = {5, 18, 19, 21};
+byte colPins[numCols] = {12, 14, 27, 26};
 Keypad myKeypad =
     Keypad(makeKeymap(keymap), rowPins, colPins, numRows, numCols);
 
@@ -230,7 +235,8 @@ void loop() {
 
       // Key handling
       if (keyWasPressed) {
-        int pressedKeyIdx = String(pressedKey).toInt() - 1;
+        int pressedKeyIdx = hex2int(pressedKey);
+        if (pressedKeyIdx >= 8) pressedKeyIdx++;
         lastHitWasSucces = pressedKeyIdx == currentLedIdx;
         if (lastHitWasSucces) {
           // It's a hit!
@@ -327,6 +333,7 @@ void setGameState(GameState newGameState, unsigned long millis) {
 void turnOnRandomLED(unsigned long millis) {
   currentLedIdx = random(0, NUMPIXELS - 1);
   if (currentLedIdx >= previousLedIdx) currentLedIdx++;
+  if (currentLedIdx == 8) currentLedIdx++;
   lastLedOn = millis;
 }
 
@@ -391,4 +398,15 @@ void wsReportTimeLeft(unsigned long millis) {
 void wsReport(String message) {
   ws.textAll(message);
   lastWsMsgSent = millis();
+}
+
+int hex2int(char ch)
+{
+    if (ch >= '0' && ch <= '9')
+        return ch - '0';
+    if (ch >= 'A' && ch <= 'F')
+        return ch - 'A' + 10;
+    if (ch >= 'a' && ch <= 'f')
+        return ch - 'a' + 10;
+    return -1;
 }
