@@ -1,10 +1,20 @@
+#include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
+#include <Adafruit_SSD1306.h>
 #include <ESPAsyncWebServer.h>
 #include <Keypad.h>
 #include <LittleFS.h>
+#include <SPI.h>
 #include <WiFi.h>
+#include <Wire.h>
 
 #include "secrets.h"
+
+#define SCREEN_WIDTH 128  // OLED display width, in pixels
+#define SCREEN_HEIGHT 64  // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET -1  // Reset pin # (or -1 if sharing Arduino reset pin)
 
 #define NEOPIXEL_PIN 13
 #define NUMPIXELS 17
@@ -42,6 +52,9 @@ byte colPins[numCols] = {12, 14, 27, 26};
 Keypad myKeypad =
     Keypad(makeKeymap(keymap), rowPins, colPins, numRows, numCols);
 
+// OLED Screen
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
 // States
 
 enum GameState { GAME_WIFI_CONNECTING, GAME_IDLE, GAME_STARTING, GAME_PLAYING };
@@ -75,6 +88,12 @@ AsyncWebSocket ws("/ws");
 void setup() {
   Serial.begin(115200);
   pixels.begin();
+
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setTextColor(WHITE);  // Draw white text
+  display.cp437(true);
+  display.setTextWrap(false);
+  drawTitle();
 
   // Mount filesystem (for web files)
   if (!LittleFS.begin()) {
@@ -185,6 +204,7 @@ void loop() {
     case GAME_IDLE: {
       if (keyWasPressed) {
         setGameState(GAME_STARTING, currentMillis);
+        drawGetReady();
         break;
       }
       pixels.rainbow(
@@ -321,6 +341,7 @@ void loop() {
           currentMillis > hitEffectEnd + silentMs &&
           currentMillis > gameEnd + silentMs
       ) {
+        drawScore(score);
         setGameState(GAME_IDLE, currentMillis);
       }
       break;
@@ -398,6 +419,8 @@ void reportTimeLeft(unsigned long millis) {
     report(scoreString);
     lastTimeLeftSent = lastGameStateChange + msSinceGameStateChange -
                        msSinceGameStateChange % 1000;
+
+    drawTimer(secondsLeft);
   }
 }
 
@@ -412,4 +435,63 @@ int hex2int(char ch) {
   if (ch >= 'A' && ch <= 'F') return ch - 'A' + 10;
   if (ch >= 'a' && ch <= 'f') return ch - 'a' + 10;
   return -1;
+}
+
+void drawTitle() {
+  display.clearDisplay();
+  display.setTextSize(2);
+  drawCenteredString("WHACK AN", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3);
+  drawCenteredString("ENGINEER", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3 * 2);
+  display.display();
+}
+
+void drawGetReady() {
+  display.clearDisplay();
+  display.setTextSize(3);
+  drawCenteredString("GET", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4);
+  drawCenteredString("READY", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4 * 3);
+  display.display();
+}
+
+void drawTimer(int seconds) {
+  int minutes = seconds / 60;
+  int remainingSeconds = seconds % 60;
+
+  String clock = "";
+  if (minutes < 10) clock.concat("0");
+  clock.concat(minutes);
+  clock.concat(":");
+  if (remainingSeconds < 10) clock.concat("0");
+  clock.concat(remainingSeconds);
+
+  display.clearDisplay();
+  display.setTextSize(3);
+
+  char chars[6];
+  clock.toCharArray(chars, 6);
+  drawCenteredString(chars, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+  display.display();
+}
+
+void drawScore(int score) {
+  display.clearDisplay();
+
+  display.setTextSize(2);
+  drawCenteredString("SCORE", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4);
+
+  display.setTextSize(3);
+  char scoreString[3];
+  itoa(score, scoreString, 10);
+  drawCenteredString(scoreString, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3 * 2);
+  display.display();
+}
+
+void drawCenteredString(const char *buf, int x, int y) {
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.getTextBounds(
+      buf, 0, 0, &x1, &y1, &w, &h
+  );  // calc width of new string
+  display.setCursor(x - w / 2, y - h / 2);
+  display.print(buf);
 }
