@@ -282,8 +282,10 @@ const handleMessage = (message) => {
         case "score":
             document.getElementById("score").innerHTML = value
             lastScore = intValue;
+            break;
         case "time":
-            document.getElementById("clock").innerHTML = formatSeconds(parseInt(value))
+            document.getElementById("clock").innerHTML = formatSeconds(intValue)
+            break;
     }
 }
 
@@ -349,12 +351,12 @@ const openSerialPort = async () => {
     await port.open({ baudRate: 115200 });
 
     // Port opened
-    // currentGameState = GAME_IDLE;
-    // syncGameState();
     const textEncoder = new TextEncoderStream();
-    const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+    textEncoder.readable.pipeTo(port.writable);
     const writer = textEncoder.writable.getWriter();
-    await writer.write("init");
+    // Just need to send anything to serial port to receive
+    //  initial game state
+    await writer.write("i");
     writer.releaseLock();
 
     while (port.readable) {

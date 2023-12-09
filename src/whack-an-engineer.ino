@@ -107,39 +107,48 @@ void loop() {
 
   unsigned long currentMillis = millis();
 
+  // // Respond to serial messages
+  if (Serial.available() > 0) {
+    // Don't really care what is sent, report game state
+    Serial.read();
+    reportGameState();
+    reportScore();
+    reportTimeLeft(currentMillis);
+  }
+
   // Key scanning
   char pressedKey = myKeypad.getKey();
   bool keyWasPressed = pressedKey != NO_KEY;
   if (keyWasPressed) {
-    Serial.print("Key pressed: ");
-    Serial.print(pressedKey);
-    Serial.print(" in state ");
-    Serial.println(state);
+    // Serial.print("Key pressed: ");
+    // Serial.print(pressedKey);
+    // Serial.print(" in state ");
+    // Serial.println(state);
     lastButtonPressed = currentMillis;
   }
 
   // Print changed Wi-Fi state
   wl_status_t currentWifiStatus = WiFi.status();
   if (currentWifiStatus != previousWifiState) {
-    Serial.print("Wi-Fi state");
-    Serial.println(currentWifiStatus);
+    // Serial.print("Wi-Fi state");
+    // Serial.println(currentWifiStatus);
     previousWifiState = currentWifiStatus;
   }
 
   // Send something on websocket to show that it's alive
   if (currentMillis > lastWsMsgSent + 2000) {
-    wsReport("pong");
+    report("pong");
   }
 
   // Handling for specific game states
   switch (state) {
     case GAME_WIFI_CONNECTING: {
       if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("\nConnected to WiFi");
-        Serial.print("IP address: ");
-        Serial.println(WiFi.localIP());
-        Serial.print("Hostname: ");
-        Serial.println(WiFi.getHostname());
+        // Serial.println("\nConnected to WiFi");
+        // Serial.print("IP address: ");
+        // Serial.println(WiFi.localIP());
+        // Serial.print("Hostname: ");
+        // Serial.println(WiFi.getHostname());
         setGameState(GAME_IDLE, currentMillis);
         break;
       }
@@ -218,7 +227,7 @@ void loop() {
         timeBetweenLED = INITIAL_TIME_BETWEEN_LED;
         timeLEDOn = INITIAL_TIME_LED_ON;
         score = 0;
-        wsReportScore();
+        reportScore();
         lastHitLedIdx = -1;
         currentLedIdx = -1;
         previousLedIdx = -1;
@@ -228,7 +237,7 @@ void loop() {
     }
 
     case GAME_PLAYING: {
-      wsReportTimeLeft(currentMillis);
+      reportTimeLeft(currentMillis);
 
       unsigned long gameEnd = lastGameStateChange + GAME_LENGTH;
       bool gameFinished = currentMillis > gameEnd;
@@ -243,15 +252,15 @@ void loop() {
           // Turn of LED and increment score
           turnOffCurrentLED(currentMillis);
           score++;
-          wsReportScore();
-          Serial.print("Score: ");
-          Serial.println(score);
+          reportScore();
+          // Serial.print("Score: ");
+          // Serial.println(score);
           // More faster!
           timeBetweenLED =
               max(MIN_TIME_BETWEEN_LED, timeBetweenLED - STEP_TIME_BETWEEN_LED);
           timeLEDOn = max(MIN_TIME_LED_ON, timeLEDOn - STEP_TIME_LED_ON);
         } else {
-          Serial.println("Incorrect!");
+          // Serial.println("Incorrect!");
         }
 
         // Save last hit info
@@ -324,10 +333,7 @@ void setGameState(GameState newGameState, unsigned long millis) {
   state = newGameState;
   lastGameStateChange = millis;
 
-  Serial.print("Game state: ");
-  Serial.println(state);
-
-  wsReportGameState();
+  reportGameState();
 }
 
 void turnOnRandomLED(unsigned long millis) {
@@ -357,8 +363,8 @@ void onWSEvent(
           "WebSocket client #%u connected from %s\n", client->id(),
           client->remoteIP().toString().c_str()
       );
-      wsReportGameState();
-      wsReportScore();
+      reportGameState();
+      reportScore();
       break;
     case WS_EVT_DISCONNECT:
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
@@ -370,43 +376,40 @@ void onWSEvent(
   }
 }
 
-void wsReportGameState() {
+void reportGameState() {
   String gameStateString = "gameState ";
   gameStateString.concat(state);
-  wsReport(gameStateString);
+  report(gameStateString);
 }
 
-void wsReportScore() {
+void reportScore() {
   String scoreString = "score ";
   scoreString.concat(score);
-  wsReport(scoreString);
+  report(scoreString);
 }
 
-void wsReportTimeLeft(unsigned long millis) {
+void reportTimeLeft(unsigned long millis) {
   int msSinceGameStateChange = millis - lastGameStateChange;
   int msUntilGameEnd = GAME_LENGTH - msSinceGameStateChange;
   if (millis > lastTimeLeftSent + 1000) {
     int secondsLeft = max(0, (int)ceil(msUntilGameEnd / 1000.0));
     String scoreString = "time ";
     scoreString.concat(secondsLeft);
-    wsReport(scoreString);
+    report(scoreString);
     lastTimeLeftSent = lastGameStateChange + msSinceGameStateChange -
                        msSinceGameStateChange % 1000;
   }
 }
 
-void wsReport(String message) {
+void report(String message) {
   ws.textAll(message);
+  Serial.println(message);
   lastWsMsgSent = millis();
 }
 
-int hex2int(char ch)
-{
-    if (ch >= '0' && ch <= '9')
-        return ch - '0';
-    if (ch >= 'A' && ch <= 'F')
-        return ch - 'A' + 10;
-    if (ch >= 'a' && ch <= 'f')
-        return ch - 'a' + 10;
-    return -1;
+int hex2int(char ch) {
+  if (ch >= '0' && ch <= '9') return ch - '0';
+  if (ch >= 'A' && ch <= 'F') return ch - 'A' + 10;
+  if (ch >= 'a' && ch <= 'f') return ch - 'a' + 10;
+  return -1;
 }
