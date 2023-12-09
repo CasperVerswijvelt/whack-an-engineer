@@ -140,6 +140,8 @@ html {
     margin: auto;
     flex: 1;
     font-size: 1.8em;
+    height: 0;
+    overflow: auto;
 }
 
 .scoreboard table {
@@ -148,6 +150,14 @@ html {
 
 .scoreboard table thead {
     height: 65px;
+    position: sticky;
+    top: 0;
+    background: rgb(2, 0, 36);
+    background: linear-gradient(rgba(2, 0, 36, 1) 0%, rgba(0, 0, 0, 1) 51%, rgba(0, 212, 255, 0) 100%);
+}
+
+.scoreboard table tbody {
+    overflow: auto;
 }
 
 #game.game--starting .scoreboard,
