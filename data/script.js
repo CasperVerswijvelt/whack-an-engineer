@@ -293,7 +293,27 @@ const handleMessage = (message) => {
 
 const initWebSocket = () => {
     console.log('Trying to open a WebSocket connection...');
-    webSocket = new WebSocket(wsUri);
+    try {
+        webSocket = new WebSocket(wsUri);
+        webSocket.onopen = function () {
+            if (this !== webSocket) return;
+            console.log("Connection opened");
+            setPongTimeout();
+        };
+        webSocket.onclose = function onClose() {
+            if (this !== webSocket) return;
+            console.log('Connection closed');
+            handleClose();
+        }
+        webSocket.onmessage = function (evt) {
+            if (this !== webSocket) return;
+            handleMessage(evt.data);
+
+            setPongTimeout();
+        };
+    } catch (e) {
+        console.log("Error opening websocket connection: ", e)
+    }
 
     const handleClose = () => {
         webSocket = null;
@@ -311,22 +331,6 @@ const initWebSocket = () => {
             handleClose();
         }, 4000)
     }
-    webSocket.onopen = function () {
-        if (this !== webSocket) return;
-        console.log("Connection opened");
-        setPongTimeout();
-    };
-    webSocket.onclose = function onClose() {
-        if (this !== webSocket) return;
-        console.log('Connection closed');
-        handleClose();
-    }
-    webSocket.onmessage = function (evt) {
-        if (this !== webSocket) return;
-        handleMessage(evt.data);
-
-        setPongTimeout();
-    };
 }
 
 const setInputFieldListeners = () => {
@@ -408,15 +412,8 @@ const setupSerialUsb = () => {
             }
         )
 
-    navigator.serial.addEventListener("connect", (event) => {
-        // TODO: Automatically open event.target or warn user a port is available.
-        console.log(event)
+    navigator.serial.addEventListener("connect", () => {
         openSerialPort();
-    });
-
-    navigator.serial.addEventListener("disconnect", (event) => {
-        // TODO: Remove |event.target| from the UI.
-        // If the serial port was opened, a stream error would be observed as well.
     });
 
 }
@@ -424,5 +421,7 @@ const setupSerialUsb = () => {
 initWebSocket();
 setInputFieldListeners();
 updateScoreBoard(getScores());
-setupSerialUsb();
-openSerialPort();
+if (navigator.serial) {
+    setupSerialUsb();
+    openSerialPort();
+}
