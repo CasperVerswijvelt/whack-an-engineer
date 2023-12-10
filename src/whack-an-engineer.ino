@@ -74,6 +74,7 @@ int currentLedIdx = -1;
 int lastHitLedIdx = -1;
 int score = 0;
 bool lastHitWasSucces = false;
+int lastSecondsLeft = 0;
 
 GameState state = GAME_WIFI_CONNECTING;
 int previousWifiState = -1;
@@ -273,6 +274,7 @@ void loop() {
           turnOffCurrentLED(currentMillis);
           score++;
           reportScore();
+          drawTimerAndScore(lastSecondsLeft, score);
           // Serial.print("Score: ");
           // Serial.println(score);
           // More faster!
@@ -341,7 +343,7 @@ void loop() {
           currentMillis > hitEffectEnd + silentMs &&
           currentMillis > gameEnd + silentMs
       ) {
-        drawScore(score);
+        drawFinalScore(score);
         setGameState(GAME_IDLE, currentMillis);
       }
       break;
@@ -413,14 +415,14 @@ void reportTimeLeft(unsigned long millis) {
   int msSinceGameStateChange = millis - lastGameStateChange;
   int msUntilGameEnd = GAME_LENGTH - msSinceGameStateChange;
   if (millis > lastTimeLeftSent + 1000) {
-    int secondsLeft = max(0, (int)ceil(msUntilGameEnd / 1000.0));
+    lastSecondsLeft = max(0, (int)ceil(msUntilGameEnd / 1000.0));
     String scoreString = "time ";
-    scoreString.concat(secondsLeft);
+    scoreString.concat(lastSecondsLeft);
     report(scoreString);
     lastTimeLeftSent = lastGameStateChange + msSinceGameStateChange -
                        msSinceGameStateChange % 1000;
 
-    drawTimer(secondsLeft);
+    drawTimerAndScore(lastSecondsLeft, score);
   }
 }
 
@@ -453,7 +455,7 @@ void drawGetReady() {
   display.display();
 }
 
-void drawTimer(int seconds) {
+void drawTimerAndScore(int seconds, int score) {
   int minutes = seconds / 60;
   int remainingSeconds = seconds % 60;
 
@@ -469,11 +471,15 @@ void drawTimer(int seconds) {
 
   char chars[6];
   clock.toCharArray(chars, 6);
-  drawCenteredString(chars, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+  drawCenteredString(chars, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4);
+
+  char scoreString[3];
+  itoa(score, scoreString, 10);
+  drawCenteredString(scoreString, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4 * 3);
   display.display();
 }
 
-void drawScore(int score) {
+void drawFinalScore(int score) {
   display.clearDisplay();
 
   display.setTextSize(2);
@@ -482,7 +488,7 @@ void drawScore(int score) {
   display.setTextSize(3);
   char scoreString[3];
   itoa(score, scoreString, 10);
-  drawCenteredString(scoreString, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3 * 2);
+  drawCenteredString(scoreString, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4 * 3);
   display.display();
 }
 
