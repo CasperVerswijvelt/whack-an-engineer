@@ -18,6 +18,8 @@ let lastScore = 0;
 
 let serialBuffer = ""
 
+let useSerial = false;
+
 const gameStateClassMap = {
     [GAME_LOADING]: "game--loading",
     [GAME_IDLE]: "game--idle",
@@ -295,9 +297,11 @@ const initWebSocket = () => {
 
     const handleClose = () => {
         webSocket = null;
-        currentGameState = GAME_LOADING
-        syncGameState();
-        setTimeout(initWebSocket, 1000);
+        if (!useSerial) {
+            currentGameState = GAME_LOADING;
+            syncGameState();
+            setTimeout(initWebSocket, 1000);
+        }
     }
     const setPongTimeout = () => {
         clearTimeout(wsPongTimeout);
@@ -349,6 +353,9 @@ const openSerialPort = async () => {
     if (!port) return;
 
     await port.open({ baudRate: 115200 });
+
+    console.log("Serial USB connection established");
+    useSerial = true;
 
     // Port opened
     const textEncoder = new TextEncoderStream();
@@ -414,7 +421,7 @@ const setupSerialUsb = () => {
 
 }
 
-// initWebSocket();
+initWebSocket();
 setInputFieldListeners();
 updateScoreBoard(getScores());
 setupSerialUsb();
