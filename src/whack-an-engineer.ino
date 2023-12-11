@@ -8,6 +8,7 @@
 #include <WiFi.h>
 #include <Wire.h>
 
+#include "CircularBuffer.h"
 #include "secrets.h"
 
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
@@ -69,12 +70,12 @@ unsigned long lastTimeLeftSent = 0;
 unsigned long lastWsMsgSent = 0;
 
 // Game states
-int previousLedIdx = -1;
 int currentLedIdx = -1;
 int lastHitLedIdx = -1;
 int score = 0;
 bool lastHitWasSucces = false;
 int lastSecondsLeft = 0;
+CircularBuffer<int, 5> previousLedIndices;
 
 GameState state = GAME_WIFI_CONNECTING;
 int previousWifiState = -1;
@@ -251,7 +252,7 @@ void loop() {
         reportScore();
         lastHitLedIdx = -1;
         currentLedIdx = -1;
-        previousLedIdx = -1;
+        previousLedIndices.clear();
         setGameState(GAME_PLAYING, currentMillis);
       }
       break;
@@ -361,13 +362,35 @@ void setGameState(GameState newGameState, unsigned long millis) {
 
 void turnOnRandomLED(unsigned long millis) {
   currentLedIdx = random(0, NUMPIXELS - 1);
-  if (currentLedIdx >= previousLedIdx) currentLedIdx++;
-  if (currentLedIdx == 8) currentLedIdx++;
+  // Yes this could be done without a while loop, but I can't be
+  //  arsed to do so, it's fast enough this way too
+  while (true) {
+    // Pick random LED
+    currentLedIdx = random(0, NUMPIXELS);
+    // Middle led does not have a button, try again
+    if (currentLedIdx == 8) continue;
+    // New led is one of last x leds, try again
+    uint8_t length = previousLedIndices.size();
+    bool doContinue = false;
+    for (uint8_t i = 0; i < length; i++) {
+      if (currentLedIdx == previousLedIndices[(int)i]) {
+        doContinue = true;
+        break;
+      }
+    }
+    if (doContinue) continue;
+    // Led is not far enough away from previous led, try again
+    if (!previousLedIndices.isEmpty() &&
+        abs(previousLedIndices[0] - currentLedIdx) < 4) {
+      continue;
+    }
+    break;
+  }
   lastLedOn = millis;
 }
 
 void turnOffCurrentLED(unsigned long millis) {
-  previousLedIdx = currentLedIdx;
+  previousLedIndices.unshift(currentLedIdx);
   currentLedIdx = -1;
   lastLedOff = millis;
 }
