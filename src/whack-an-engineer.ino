@@ -25,12 +25,15 @@
 #define RAINBOW_CYCLE_MS 5000
 #define GAME_LENGTH 30000
 
-#define INITIAL_TIME_BETWEEN_LED 650
+#define INITIAL_TIME_BETWEEN_LED 550
 #define INITIAL_TIME_LED_ON 1000
-#define MIN_TIME_BETWEEN_LED 350
+#define MIN_TIME_BETWEEN_LED 250
 #define MIN_TIME_LED_ON 500
-#define STEP_TIME_BETWEEN_LED 20
+#define STEP_TIME_BETWEEN_LED 15
 #define STEP_TIME_LED_ON 20
+
+#define STREAK_MAX 15
+#define MIN_STREAK_TINT 8
 
 #define LED_FADE_MS 100
 #define HIT_FADE_MS 450
@@ -75,7 +78,8 @@ int lastHitLedIdx = -1;
 int score = 0;
 bool lastHitWasSucces = false;
 int lastSecondsLeft = 0;
-CircularBuffer<int, 5> previousLedIndices;
+CircularBuffer<int, 1> previousLedIndices;
+int streak = 0;
 
 GameState state = GAME_WIFI_CONNECTING;
 int previousWifiState = -1;
@@ -246,13 +250,9 @@ void loop() {
         pixels.clear();
       } else {
         // Reset game states
-        timeBetweenLED = INITIAL_TIME_BETWEEN_LED;
-        timeLEDOn = INITIAL_TIME_LED_ON;
-        score = 0;
+        resetGameStates();
+
         reportScore();
-        lastHitLedIdx = -1;
-        currentLedIdx = -1;
-        previousLedIndices.clear();
         setGameState(GAME_PLAYING, currentMillis);
       }
       break;
@@ -269,13 +269,15 @@ void loop() {
         int pressedKeyIdx = hex2int(pressedKey);
         if (pressedKeyIdx >= 8) pressedKeyIdx++;
         lastHitWasSucces = pressedKeyIdx == currentLedIdx;
+        int scoreDiff;
         if (lastHitWasSucces) {
           // It's a hit!
           // Turn of LED and increment score
           turnOffCurrentLED(currentMillis);
-          score++;
-          reportScore();
-          drawTimerAndScore(lastSecondsLeft, score);
+          scoreDiff = 2;
+          streak++;
+          if (streak >= 10) scoreDiff *= 2;
+
           // Serial.print("Score: ");
           // Serial.println(score);
           // More faster!
@@ -283,8 +285,16 @@ void loop() {
               max(MIN_TIME_BETWEEN_LED, timeBetweenLED - STEP_TIME_BETWEEN_LED);
           timeLEDOn = max(MIN_TIME_LED_ON, timeLEDOn - STEP_TIME_LED_ON);
         } else {
+          scoreDiff = -1;
+          streak = 0;
           // Serial.println("Incorrect!");
         }
+
+        score = max(0, score + scoreDiff);
+        reportHit(pressedKeyIdx, scoreDiff);
+        reportScore();
+        reportStreak();
+        drawTimerAndScore(lastSecondsLeft, score);
 
         // Save last hit info
         lastHit = currentMillis;
@@ -317,8 +327,17 @@ void loop() {
         } else if (msUntilEnd < LED_FADE_MS) {
           brightness *= msUntilEnd * 1.0 / LED_FADE_MS;
         }
-        // White LED only
-        pixels.setPixelColor(currentLedIdx, pixels.Color(0, 0, 0, brightness));
+        int maxStreak = STREAK_MAX - MIN_STREAK_TINT;
+        uint8_t saturation =
+            (int)(255.0 * (max(0, min(maxStreak, streak - MIN_STREAK_TINT))) /
+                  maxStreak);
+        // White, gradually increase to blue according to streak
+        pixels.setPixelColor(
+            currentLedIdx,
+            pixels.ColorHSV(
+                (uint16_t)(240 * 65535 / 360), saturation, brightness
+            )
+        );
       }
 
       unsigned long hitEffectEnd = lastHit + HIT_FADE_MS;
@@ -351,6 +370,16 @@ void loop() {
     }
   }
   pixels.show();
+}
+
+void resetGameStates() {
+  timeBetweenLED = INITIAL_TIME_BETWEEN_LED;
+  timeLEDOn = INITIAL_TIME_LED_ON;
+  score = 0;
+  lastHitLedIdx = -1;
+  currentLedIdx = -1;
+  previousLedIndices.clear();
+  streak = 0;
 }
 
 void setGameState(GameState newGameState, unsigned long millis) {
@@ -449,8 +478,20 @@ void reportTimeLeft(unsigned long millis) {
   }
 }
 
+void reportHit(int index, int score) {
+  char msg[10];
+  snprintf(msg, sizeof(msg), "hit %i %i", index, score);
+  report(msg);
+}
+
+void reportStreak() {
+  char msg[10];
+  snprintf(msg, sizeof(msg), "streak %i", streak);
+  report(msg);
+}
+
 void report(String message) {
-  ws.textAll(message);
+  ws.textAll(message + "\n");
   Serial.println(message);
   lastWsMsgSent = millis();
 }
