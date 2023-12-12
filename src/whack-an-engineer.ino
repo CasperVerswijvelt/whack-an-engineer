@@ -77,7 +77,7 @@ int lastHitLedIdx = -1;
 int score = 0;
 bool lastHitWasSucces = false;
 int lastSecondsLeft = 0;
-CircularBuffer<int, 1> previousLedIndices;
+CircularBuffer<int, 4> previousLedIndices;
 int streak = 0;
 
 GameState state = GAME_WIFI_CONNECTING;
