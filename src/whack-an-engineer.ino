@@ -27,13 +27,12 @@
 
 #define INITIAL_TIME_BETWEEN_LED 550
 #define INITIAL_TIME_LED_ON 1000
-#define MIN_TIME_BETWEEN_LED 250
-#define MIN_TIME_LED_ON 500
-#define STEP_TIME_BETWEEN_LED 15
-#define STEP_TIME_LED_ON 20
+#define MIN_TIME_BETWEEN_LED 300
+#define MIN_TIME_LED_ON 650
+#define STEP_TIME_BETWEEN_LED 12
+#define STEP_TIME_LED_ON 12
 
-#define STREAK_MAX 15
-#define MIN_STREAK_TINT 8
+#define STREAK_MAX 10
 
 #define LED_FADE_MS 100
 #define HIT_FADE_MS 450
@@ -327,17 +326,8 @@ void loop() {
         } else if (msUntilEnd < LED_FADE_MS) {
           brightness *= msUntilEnd * 1.0 / LED_FADE_MS;
         }
-        int maxStreak = STREAK_MAX - MIN_STREAK_TINT;
-        uint8_t saturation =
-            (int)(255.0 * (max(0, min(maxStreak, streak - MIN_STREAK_TINT))) /
-                  maxStreak);
-        // White, gradually increase to blue according to streak
-        pixels.setPixelColor(
-            currentLedIdx,
-            pixels.ColorHSV(
-                (uint16_t)(240 * 65535 / 360), saturation, brightness
-            )
-        );
+        // White led only
+        pixels.setPixelColor(currentLedIdx, pixels.Color(0, 0, 0, brightness));
       }
 
       unsigned long hitEffectEnd = lastHit + HIT_FADE_MS;
@@ -347,8 +337,11 @@ void loop() {
         float brightness =
             255 - 255.0 * (currentMillis - lastHit) / HIT_FADE_MS;
         pixels.setPixelColor(
-            lastHitLedIdx, lastHitWasSucces ? pixels.Color(0, brightness, 0)
-                                            : pixels.Color(brightness, 0, 0)
+            lastHitLedIdx, lastHitWasSucces
+                               ? streak >= STREAK_MAX
+                                     ? pixels.Color(0, 0, brightness)
+                                     : pixels.Color(0, brightness, 0)
+                               : pixels.Color(brightness, 0, 0)
         );
       }
 
