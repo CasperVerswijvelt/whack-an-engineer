@@ -288,6 +288,12 @@ const handleMessage = (message) => {
         case "time":
             document.getElementById("clock").innerHTML = formatSeconds(intValue)
             break;
+        case "streak":
+            document.getElementById("streak").innerHTML = intValue
+            const isStreaking = split[2]?.trim() === "true"
+            console.log(split[2], { isStreaking })
+            document.getElementsByClassName("streak")[0]?.classList.toggle("highlight", isStreaking);
+            break;
     }
 }
 

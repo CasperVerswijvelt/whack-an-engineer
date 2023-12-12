@@ -92,6 +92,11 @@ html {
     font-size: 3em;
 }
 
+.playing-screen .streak {
+    padding-top: 3em;
+    font-size: 2em;
+}
+
 .loading-screen,
 .idle-screen,
 .starting-screen,

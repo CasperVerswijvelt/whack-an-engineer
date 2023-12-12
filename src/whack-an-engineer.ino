@@ -29,8 +29,8 @@
 #define INITIAL_TIME_LED_ON 1000
 #define MIN_TIME_BETWEEN_LED 300
 #define MIN_TIME_LED_ON 650
-#define STEP_TIME_BETWEEN_LED 12
-#define STEP_TIME_LED_ON 12
+#define STEP_TIME_BETWEEN_LED 15
+#define STEP_TIME_LED_ON 15
 
 #define STREAK_MAX 10
 
@@ -252,6 +252,8 @@ void loop() {
         resetGameStates();
 
         reportScore();
+        reportTimeLeft(currentMillis);
+        reportStreak();
         setGameState(GAME_PLAYING, currentMillis);
       }
       break;
@@ -478,8 +480,11 @@ void reportHit(int index, int score) {
 }
 
 void reportStreak() {
-  char msg[10];
-  snprintf(msg, sizeof(msg), "streak %i", streak);
+  char msg[20];
+  snprintf(
+      msg, sizeof(msg), "streak %i %s", streak,
+      streak >= STREAK_MAX ? "true" : "false"
+  );
   report(msg);
 }
 
