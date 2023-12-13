@@ -149,6 +149,10 @@ html {
     overflow: auto;
 }
 
+.scoreboard .scores::-webkit-scrollbar {
+    display: none;
+}
+
 .scoreboard table {
     border-spacing: 16px 0;
 }
