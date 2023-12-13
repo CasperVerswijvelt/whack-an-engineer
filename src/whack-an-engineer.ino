@@ -21,8 +21,9 @@
 #define NUMPIXELS 17
 
 #define WIFI_ANIMATION_CYCLE_MS 1000
-
 #define RAINBOW_CYCLE_MS 5000
+#define MID_LED_FADE_MS 5000
+
 #define GAME_LENGTH 30000
 
 #define INITIAL_TIME_BETWEEN_LED 450
@@ -369,7 +370,16 @@ void loop() {
   }
 
   // Christmas tree's are green, right?
-  pixels.setPixelColor(MIDDLE_PIN_INDEX, pixels.Color(0, 255, 0));
+  pixels.setPixelColor(
+      MIDDLE_PIN_INDEX,
+      pixels.Color(
+          0.0,
+          255.0 *
+              min((ulong)MID_LED_FADE_MS, max(currentMillis - 500, (ulong)0)) /
+              MID_LED_FADE_MS,
+          0
+      )
+  );
   pixels.show();
 }
 
