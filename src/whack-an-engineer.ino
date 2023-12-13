@@ -277,9 +277,8 @@ void loop() {
           // It's a hit!
           // Turn of LED and increment score
           turnOffCurrentLED(currentMillis);
-          scoreDiff = 2;
           streak++;
-          if (streak >= 10) scoreDiff *= 2;
+          scoreDiff = streak > STREAK_MAX ? 4 : streak > STREAK_MAX / 2 ? 3 : 2;
 
           // Serial.print("Score: ");
           // Serial.println(score);
@@ -341,11 +340,13 @@ void loop() {
         float brightness =
             255 - 255.0 * (currentMillis - lastHit) / HIT_FADE_MS;
         pixels.setPixelColor(
-            lastHitLedIdx, lastHitWasSucces
-                               ? streak >= STREAK_MAX
-                                     ? pixels.Color(0, 0, brightness)
-                                     : pixels.Color(0, brightness, 0)
-                               : pixels.Color(brightness, 0, 0)
+            lastHitLedIdx,
+            lastHitWasSucces
+                ? streak > STREAK_MAX ? pixels.Color(0, 0, brightness)
+                  : streak > STREAK_MAX / 2
+                      ? pixels.Color(0, brightness / 2, brightness / 2)
+                      : pixels.Color(0, brightness, 0)
+                : pixels.Color(brightness, 0, 0)
         );
       }
 
@@ -488,7 +489,7 @@ void reportStreak() {
   char msg[20];
   snprintf(
       msg, sizeof(msg), "streak %i %s", streak,
-      streak >= STREAK_MAX ? "true" : "false"
+      streak >= STREAK_MAX / 2 ? "true" : "false"
   );
   report(msg);
 }
