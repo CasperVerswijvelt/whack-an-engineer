@@ -201,7 +201,7 @@ const setGameEndTimeout = () => {
                 syncGameState();
             }
         },
-        30000
+        60000
     )
 }
 
