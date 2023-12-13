@@ -37,6 +37,8 @@
 #define LED_FADE_MS 100
 #define HIT_FADE_MS 450
 
+#define MIDDLE_PIN_INDEX ((NUMPIXELS - 1) / 2)
+
 // LED configuration
 Adafruit_NeoPixel pixels =
     Adafruit_NeoPixel(NUMPIXELS, NEOPIXEL_PIN, NEO_GRBW + NEO_KHZ800);
@@ -268,7 +270,7 @@ void loop() {
       // Key handling
       if (keyWasPressed) {
         int pressedKeyIdx = hex2int(pressedKey);
-        if (pressedKeyIdx >= 8) pressedKeyIdx++;
+        if (pressedKeyIdx >= MIDDLE_PIN_INDEX) pressedKeyIdx++;
         lastHitWasSucces = pressedKeyIdx == currentLedIdx;
         int scoreDiff;
         if (lastHitWasSucces) {
@@ -364,6 +366,9 @@ void loop() {
       break;
     }
   }
+
+  // Christmas tree's are green, right?
+  pixels.setPixelColor(MIDDLE_PIN_INDEX, pixels.Color(0, 255, 0));
   pixels.show();
 }
 
@@ -392,7 +397,7 @@ void turnOnRandomLED(unsigned long millis) {
     // Pick random LED
     currentLedIdx = random(0, NUMPIXELS);
     // Middle led does not have a button, try again
-    if (currentLedIdx == 8) continue;
+    if (currentLedIdx == MIDDLE_PIN_INDEX) continue;
     // New led is one of last x leds, try again
     uint8_t length = previousLedIndices.size();
     bool doContinue = false;
