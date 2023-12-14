@@ -161,8 +161,7 @@ html {
     height: 65px;
     position: sticky;
     top: 0;
-    background: rgb(2, 0, 36);
-    background: linear-gradient(rgba(2, 0, 36, 1) 0%, rgba(0, 0, 0, 1) 51%, rgba(0, 212, 255, 0) 100%);
+    background: linear-gradient(black 0%, black 51%, rgba(0, 0, 0, 0) 100%);
 }
 
 .scoreboard table tbody {
