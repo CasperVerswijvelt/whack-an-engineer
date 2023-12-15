@@ -164,7 +164,7 @@ const updateScoreBoard = (scores) => {
 
     tableBody.innerHTML = "";
 
-    const entryCount = 20;
+    const entryCount = Math.max(20, scores.length);
 
     for (let i = 0; i < entryCount; i++) {
         const score = scores[i] ?? {
