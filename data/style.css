@@ -135,22 +135,67 @@ html {
     align-items: center;
     padding: 25px;
     border-right: solid 4px white;
+    width: 100%;
 }
 
 .scoreboard .title {
     font-size: 4em;
 }
 
+.scoreboard .subtitle {
+    font-size: 2em;
+    margin-bottom: 1em;
+}
+
 .scoreboard .scores {
     margin: auto;
     flex: 1;
-    font-size: 1.8em;
+    font-size: 1.7em;
     height: 0;
     overflow: auto;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
 }
 
 .scoreboard .scores::-webkit-scrollbar {
     display: none;
+}
+
+#scoreboard-body {
+
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+}
+
+.scores>div {
+    display: flex;
+    justify-content: space-around;
+}
+
+.scores {
+    display: flex;
+}
+
+.scores>div div {
+    text-align: center;
+}
+
+.scores>div div:nth-child(1) {
+    width: 80px;
+}
+
+.scores>div div:nth-child(2) {
+    width: 60px;
+}
+
+.scores>div div:nth-child(3) {
+    width: 60px;
+}
+
+.scores>div:nth-last-child(n + 24) {
+    border-right: solid #ffffff59 2px;
 }
 
 .scoreboard table {
@@ -204,6 +249,22 @@ html {
 
 .highlight {
     color: #fff400;
+}
+
+.highlight-blue {
+    color: rgb(129, 166, 245);
+}
+
+.gold {
+    color: #FFD700;
+}
+
+.silver {
+    color: #c0c0c0;
+}
+
+.bronze {
+    color: #cd7f32
 }
 
 .blink {

@@ -160,29 +160,32 @@ const nth = (d) => {
 };
 
 const updateScoreBoard = (scores) => {
-    const tableBody = document.getElementById("scoreboard-table-body");
+    const tableBody = document.getElementById("scoreboard-body");
 
     tableBody.innerHTML = "";
 
-    const entryCount = 20;
-
-    for (let i = 0; i < entryCount; i++) {
+    for (let i = 0; i < scores.length; i++) {
         const score = scores[i] ?? {
             name: "---",
             score: "-",
         }
 
-        const trNode = document.createElement("tr");
-        const rankNode = document.createElement("th");
+        const trNode = document.createElement("div");
+        const rankNode = document.createElement("div");
         rankNode.innerText = `${i + 1}${nth(i + 1).toUpperCase()}`;
-        const nameNode = document.createElement("th");
+        const nameNode = document.createElement("div");
         nameNode.innerText = score.name;
-        const scoreNode = document.createElement("th");
+        const scoreNode = document.createElement("div");
         scoreNode.innerText = score.score;
         trNode.appendChild(rankNode);
         trNode.appendChild(nameNode);
         trNode.appendChild(scoreNode);
-        if (score.temp) trNode.className = "highlight";
+        trNode.title = new Date(score.timestamp).toLocaleTimeString()
+        if (i === 0) trNode.className = "gold";
+        if (i === 1) trNode.className = "silver";
+        if (i === 2) trNode.className = "bronze";
+        if (i === 3) trNode.className = "bronze";
+        if (score.name.toLowerCase() === "kla") trNode.className = "highlight-blue";
         tableBody.appendChild(trNode);
     }
 }
@@ -424,10 +427,4 @@ const setupSerialUsb = () => {
 
 }
 
-initWebSocket();
-setInputFieldListeners();
 updateScoreBoard(getScores());
-if (navigator.serial) {
-    setupSerialUsb();
-    openSerialPort();
-}
