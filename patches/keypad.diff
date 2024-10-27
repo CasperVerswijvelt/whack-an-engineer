@@ -1,0 +1,11 @@
+--- .pio/libdeps/esp-wrover-kit/Keypad/src/Keypad.cpp	2024-10-27 16:06:15
++++ .pio/libdeps/esp-wrover-kit/Keypad/src/Keypad copy.cpp	2024-10-27 16:05:54
+@@ -85,7 +85,7 @@
+ void Keypad::scanKeys() {
+   // Re-intialize the row pins. Allows sharing these pins with other hardware.
+   for (byte r = 0; r < sizeKpd.rows; r++) {
+-    pin_mode(rowPins[r], INPUT_PULLUP);
++    pin_mode(rowPins[r], INPUT);
+   }
+ 
+   // bitMap stores ALL the keys that are being pressed.
