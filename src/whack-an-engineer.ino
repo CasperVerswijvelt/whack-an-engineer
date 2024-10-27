@@ -8,7 +8,7 @@
 #include <WiFi.h>
 #include <Wire.h>
 
-#include "CircularBuffer.h"
+#include "CircularBuffer.hpp"
 #include "secrets.h"
 
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
