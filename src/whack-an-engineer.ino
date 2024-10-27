@@ -256,10 +256,10 @@ void loop() {
         // Reset game states
         resetGameStates();
 
-        reportScore();
-        reportTimeLeft(currentMillis);
-        reportStreak();
         setGameState(GAME_PLAYING, currentMillis);
+        reportScore();
+        reportStreak();
+        reportTimeLeft(currentMillis);
       }
       break;
     }
