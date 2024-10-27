@@ -48,11 +48,11 @@ Adafruit_NeoPixel pixels =
 const byte numRows = 4;  // number of rows on the keypad
 const byte numCols = 4;  // number of columns on the keypad
 char keymap[numRows][numCols] = {
-  {'D', 'E', 'C', 'F'},
-  {'6', '5', '7', '4'},
-  {'2', '1', '3', '0'},
-  {'9', 'A', '8', 'B'}
-  };
+    {'D', 'E', 'C', 'F'},
+    {'6', '5', '7', '4'},
+    {'2', '1', '3', '0'},
+    {'9', 'A', '8', 'B'}
+};
 byte rowPins[numRows] = {5, 18, 19, 4};
 byte colPins[numCols] = {12, 14, 27, 26};
 Keypad myKeypad =
@@ -236,7 +236,8 @@ void loop() {
                       fadeOutDuration * 200,
             true
         );
-      } else if (currentMillis < lastGameStateChange + fadeOutDuration + flashDuration) {
+      } else if (currentMillis <
+                 lastGameStateChange + fadeOutDuration + flashDuration) {
         int minDiff = 1000;
         for (int i = 1; i <= flashCount; i++) {
           minDiff =
@@ -248,7 +249,8 @@ void loop() {
             pixels.Color(max(0.0, 255 - minDiff / 200.0 * 255), 0, 0, 0), 0,
             NUMPIXELS
         );
-      } else if (currentMillis < lastGameStateChange + fadeOutDuration + flashDuration + 1000) {
+      } else if (currentMillis <
+                 lastGameStateChange + fadeOutDuration + flashDuration + 1000) {
         pixels.clear();
       } else {
         // Reset game states
