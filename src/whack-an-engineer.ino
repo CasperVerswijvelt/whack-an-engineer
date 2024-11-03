@@ -370,18 +370,6 @@ void loop() {
       break;
     }
   }
-
-  // Christmas tree's are green, right?
-  pixels.setPixelColor(
-      MIDDLE_PIN_INDEX,
-      pixels.Color(
-          0.0,
-          255.0 *
-              min((ulong)MID_LED_FADE_MS, max(currentMillis - 500, (ulong)0)) /
-              MID_LED_FADE_MS,
-          0
-      )
-  );
   pixels.show();
 }
 
